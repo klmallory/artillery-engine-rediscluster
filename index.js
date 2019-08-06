@@ -78,38 +78,58 @@ RedisClusterEngine.prototype.step = function step(rs, ee, opts) {
 
       ee.emit('request');
       const startedAt = process.hrtime();
-
+      
       var rdc = context.rcluster;
 
-      rdc.on('connect', function () {
-      });
-
-      rdc.on("error", function (err) {
+      var onError = function(err) 
+      {
         debug('Send error');
         ee.emit('error', err);
         console.log(err);
         return callback(err, context);
+      };
+
+      var handleResponse = function(err, reply)
+      {
+        const endedAt = process.hrtime(startedAt);
+        let delta = (endedAt[0] * 1e9) + endedAt[1];
+        reply = reply == null ? "" : reply
+        if (err) {
+          return onError(err)
+        }
+        else {
+          if (command == "hget"){
+          console.log(key, reply);}
+          ee.emit('response', delta, 'response', context._uid);
+          debug('response');
+          debug(reply.toString());
+          return callback(null, context);
+        }
+      };
+
+      rdc.on("error", function (err) {
+        return onError(err);
       });
 
       if (command == "get") {
         var data = rdc.get(key, function (err, reply) {
-          const endedAt = process.hrtime(startedAt);
-          let delta = (endedAt[0] * 1e9) + endedAt[1];
-          reply = reply == null ? "" : reply
-          if (err) {
-            console.log("error " + err);
-            ee.emit('response', delta, err, context._uid);
-            debug('response');
-            return callback(null, context);
-          }
-          else {
-            ee.emit('response', delta, 'response', context._uid);
-            debug('response');
-            debug(reply.toString());
-            return callback(null, context);
-          }
+          return handleResponse(err, reply);
         });
-
+      }
+      else if (command == "hget") {
+        var data = rdc.hmget(key.split(','), function (err, reply) {
+          return handleResponse(err, reply);
+        });
+      }
+      else if (command == "set") {
+        var data = rdc.set(key, value, function (err, reply) {
+          return handleResponse(err, reply);
+        });
+      }
+      else if (command == "hmset") {
+        var data = rdc.hset(key, values.split(','), function (err, reply) {
+          return handleResponse(err, reply);
+        });
       }
     };
   }
