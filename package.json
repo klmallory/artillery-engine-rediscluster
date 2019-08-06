@@ -1,18 +1,19 @@
 {
-  "name": "artillery-engine-tcp",
+  "name": "artillery-engine-rediscluster",
   "version": "1.0.0",
-  "description": "Load test TCP with Artillery.io",
+  "description": "Load test Redis with Artillery.io",
   "main": "index.js",
   "scripts": {
     "test": "node test/index.js"
   },
   "keywords": [
-    "tcp",
+    "redis",
+    "redis-clustr",
     "load"
   ],
-  "author": "limiter121",
+  "author": "klmallory",
   "license": "MPL-2.0",
-  "repository": "limiter121/artillery-engine-tcp",
+  "repository": "klmallory/artillery-engine-rediscluster",
   "devDependencies": {
     "debug": "^2.6.4",
     "eslint": "^3.19.0",
@@ -28,6 +29,8 @@
     "artillery-core": "^4.6.0",
     "async": "^1.5.2",
     "debug": "^2.6.6",
-    "lodash": "^4.17.4"
+    "lodash": "^4.17.4",
+    "redis":"^2.8.0",
+    "redis-clustr":"^1.7.0"
   }
 }

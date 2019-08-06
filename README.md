@@ -1,10 +1,10 @@
-# Artillery.io TCP Plugin
+# Artillery.io Redis Plugin
 
 <p align="center">
-    <em>Load test TCP with <a href="https://artillery.io">Artillery.io</a></em>
+    <em>Load test Redis with <a href="https://artillery.io">Artillery.io</a></em>
 </p>
 
-Based on the [AWS Lambda Engine by orchestrated.io](https://github.com/orchestrated-io/artillery-engine-lambda).
+Based on the [TCP Engine by limiter121](https://github.com/limiter121/artillery-engine-tcp).
 
 ## Usage
 
@@ -14,35 +14,32 @@ Based on the [AWS Lambda Engine by orchestrated.io](https://github.com/orchestra
 
 ```
 # If Artillery is installed globally:
-npm install -g artillery-engine-tcp
+npm install -g artillery-engine-rediscluster
 ```
 
 ### Use the plugin
 
-1. Set `config.target` to the host address of the TCP server
-2. Specify additional options in `config.tcp`:
-    - `port` - number (**required**)
-3. Set the `engine` property of the scenario to `tcp`.
+1. Set `config.redis.targets` to the list of servers with ports in the cluster
+3. Set the `engine` property of the scenario to `rediscluster`.
 4. Use `send` in your scenario to send arbitrary data to the server
 5. Specify additional invocation parameters:
-    - `payload` - String or object (gets converted to JSON string) with the payload to send
-    - `encoding` - Payload string encoding. Defaults to `utf8`. See [Buffer.from(*string*)](https://nodejs.org/api/buffer.html#buffer_class_method_buffer_from_string_encoding).
+    - `command` - String Redis Command to use (Get, Set, HSet, HGet, GetAsync, SetAsync, LPush, LPop)
+    - `key` - String key to get or set
+    - `value` - String used to set values, push, or publish 
 
-*Note:* The TCP server must respond (with anything) to each `send` command in order for the request to finish.
+*Note:* Currently the engine does not handle failures gracefully and the test will shutdown with timeouts.
 
 #### Example Script
 
 ```yaml
 config:
-  target: "localhost"
-  tcp:
-    port: 1234
+  redis:
+    targets: "10.100.1.100:6379,10.100.1.100:6380"
   phases:
     - arrivalCount: 10
       duration: 1
   engines:
-    tcp: {}
-
+    rediscluster: {}
 scenarios:
   - name: "Send data"
     engine: tcp
@@ -50,12 +47,14 @@ scenarios:
       - count: 10
         loop:
         - send:
-            payload: "hello world"
-        - think: 1
+            command: "set"
+            key: "Id_{{ id }}"
+            value: "Hello"
+        -think: 1        
         - send:
-            payload: "1111111111"
-            encoding: "hex"
-        - think: 1
+            command: "get"
+            key: "Id_{{ id }}"
+        - think: 1  
 ```
 
 ### Run Your Script
