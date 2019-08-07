@@ -41,8 +41,8 @@ config:
   engines:
     rediscluster: {}
 scenarios:
-  - name: "Send data"
-    engine: tcp
+  - name: "Test Set & Get"
+    engine: rediscluster
     flow:
       - count: 10
         loop:
