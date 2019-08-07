@@ -11,6 +11,7 @@ const _ = require('lodash');
 const redis = require('redis');
 const redisCluster = require('redis-clustr');
 const helpers = require('artillery-core/lib/engine_util');
+let cluster;
 
 function RedisClusterEngine(script, ee) {
   this.script = script;
@@ -78,8 +79,6 @@ RedisClusterEngine.prototype.step = function step(rs, ee, opts) {
 
       ee.emit('request');
       const startedAt = process.hrtime();
-      
-      var rdc = context.rcluster;
 
       var onError = function(err) 
       {
@@ -107,27 +106,23 @@ RedisClusterEngine.prototype.step = function step(rs, ee, opts) {
         }
       };
 
-      rdc.on("error", function (err) {
-        return onError(err);
-      });
-
       if (command == "get") {
-        var data = rdc.get(key, function (err, reply) {
+        var data = cluster.get(key, function (err, reply) {
           return handleResponse(err, reply);
         });
       }
       else if (command == "hget") {
-        var data = rdc.hmget(key.split(','), function (err, reply) {
+        var data = cluster.hmget(key.split(','), function (err, reply) {
           return handleResponse(err, reply);
         });
       }
       else if (command == "set") {
-        var data = rdc.set(key, value, function (err, reply) {
+        var data = cluster.set(key, value, function (err, reply) {
           return handleResponse(err, reply);
         });
       }
       else if (command == "hmset") {
-        var data = rdc.hset(key, values.split(','), function (err, reply) {
+        var data = cluster.hset(key, values.split(','), function (err, reply) {
           return handleResponse(err, reply);
         });
       }
@@ -143,12 +138,19 @@ RedisClusterEngine.prototype.compile = function compile(tasks, scenarioSpec, ee)
   const self = this;
   return function scenario(initialContext, callback) {
     const init = function init(next) {
-      var servers = [];
-      var hosts = self.script.config.redis.targets.split(',');
-      hosts.forEach(function (ele) { servers.push({ host: ele.split(':')[0], port: parseInt(ele.split(':')[1]) }); });
 
-      initialContext.rcluster = new redisCluster(servers);
+      if (cluster == undefined)
+      {
+        var servers = [];
+        var hosts = self.script.config.redis.targets.split(',');
+        hosts.forEach(function (ele) { servers.push({ host: ele.split(':')[0], port: parseInt(ele.split(':')[1]) }); });
 
+        cluster = new redisCluster(servers);
+
+        cluster.on("error", function (err) {
+          return onError(err);
+        });
+      }
 
       ee.emit('started');
       return next(null, initialContext);
