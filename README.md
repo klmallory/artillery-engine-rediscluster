@@ -1,5 +1,6 @@
 # Artillery.io Redis Plugin
 
+Hello 2
 Hello 1
 
 <p align="center">
